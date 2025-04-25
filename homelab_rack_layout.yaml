@@ -1,0 +1,156 @@
+rack_layout:
+  name: GG3 HomeLab Rack
+  total_units: 12
+  equipment:
+  - unit: 1
+    name: Ubiquiti UCI Modem
+    type: Modem
+    size: 1U
+    notes: DOCSIS 3.1, rack-mountable, connects to coax drop
+  - unit: 2
+    name: Patch Panel (Optional)
+    type: Cable Management
+    size: 1U
+    notes: Used to cleanly route and manage Ethernet from rear devices
+  - unit: 3
+    name: Ubiquiti USW-24-POE
+    type: Switch
+    size: 1U
+    notes: 24-port managed POE switch, VLAN-capable
+  - unit: 4
+    name: Qotom pfSense Box
+    type: Firewall/Router
+    size: 1U
+    notes: Atom C3808, 4x SFP+, 5x 2.5GbE, runs pfSense
+  - unit: 5
+    name: Ventilation Gap
+    type: Spacer
+    size: 1U
+    notes: Airflow between firewall and servers
+  - unit: 6
+    name: Supermicro Node 1
+    type: 1U Server
+    size: 1U
+    notes: First server for lab workloads
+  - unit: 7
+    name: Supermicro Node 2
+    type: 1U Server
+    size: 1U
+    notes: Second server, redundant or for service separation
+  - unit: 8
+    name: Ventilation Gap
+    type: Spacer
+    size: 1U
+    notes: Airflow between servers and power units
+  - unit: 9
+    name: Tripp Lite RS1215-RA
+    type: PDU (Power Strip)
+    size: 1U
+    notes: 12-outlet horizontal rack PDU with front + rear outlets
+  - unit: 10-11
+    name: CyberPower CP1500PFCRM2U
+    type: UPS
+    size: 2U
+    notes: 1500VA/1000W UPS, short depth, provides clean power and battery backup
+equipment_with_roles:
+- name: Qotom pfSense Box
+  role: Firewall/Router
+  power_draw_watts: 20
+  cable_type: CAT6, SFP+
+- name: Supermicro Node 1
+  role: XCP-ng Host
+  power_draw_watts: 80
+  cable_type: CAT6
+- name: Supermicro Node 2
+  role: Backup Server
+  power_draw_watts: 75
+  cable_type: CAT6
+- name: Ubiquiti USW-24-POE
+  role: Core Switch
+  power_draw_watts: 25
+  notes: Without PoE load
+  cable_type: CAT6
+- name: Tripp Lite RS1215-RA
+  role: Power Strip
+  power_draw_watts: 0
+  cable_type: N/A
+- name: CyberPower CP1500PFCRM2U
+  role: UPS
+  power_draw_watts: 0
+  cable_type: N/A
+- name: Ubiquiti UCI Modem
+  role: WAN Modem
+  power_draw_watts: 10
+  cable_type: Coax + CAT6
+networking:
+  vlans:
+  - id: 10
+    name: Main LAN
+    subnet: 10.3.10.0/24
+    purpose: Trusted devices
+  - id: 20
+    name: Lab VLAN
+    subnet: 10.3.20.0/24
+    purpose: Homelab and XCP-ng
+  - id: 30
+    name: Guest VLAN
+    subnet: 10.3.30.0/24
+    purpose: Guest Wi-Fi and family
+  - id: 99
+    name: VPN VLAN
+    subnet: 10.99.99.0/24
+    purpose: WireGuard access via Raspberry Pi
+  port_assignments:
+    pfSense_ports:
+      port1: WAN (connected to modem)
+      port2: LAN - Trunk to switch (VLANs 10, 20, 30, 99)
+      port3: Management or out-of-band (optional)
+      port4: Future expansion
+    switch_ports:
+      port1-4: Access points (VLAN-tagged SSIDs)
+      port5-12: Servers and lab (VLAN 20)
+      port13-16: Main LAN devices (VLAN 10)
+      port17-20: Guest devices (VLAN 30)
+      port21-24: Spare / VPN devices / PoE-powered Pi (VLAN 99)
+  ip_reservations:
+  - device: pfSense Firewall
+    ip: 10.3.10.1
+    vlan: 10
+    role: Gateway
+  - device: Supermicro Node 1
+    ip: 10.3.20.10
+    vlan: 20
+    role: XCP-ng Hypervisor
+  - device: Supermicro Node 2
+    ip: 10.3.20.11
+    vlan: 20
+    role: Backup or Secondary Services
+  - device: Mac Mini
+    ip: 10.3.10.66
+    vlan: 10
+    role: Dev Machine
+  - device: WireGuard Pi
+    ip: 10.99.99.66
+    vlan: 99
+    role: VPN Gateway
+  - device: Access Point 1
+    ip: 10.3.10.100
+    vlan: 10
+    role: Wi-Fi Uplink
+access_points:
+- name: Ubiquiti U7-Pro
+  type: Wi-Fi 7 Access Point
+  mount: Ceiling or wall-mounted (not rack-mounted)
+  vlans_supported:
+  - 10
+  - 20
+  - 30
+  notes: Tri-band AP with VLAN-tagged SSIDs for Main, Lab, and Guest networks
+expansion_notes:
+  available_rack_units: 1
+  future_plans:
+  - Add NAS storage node (rack-mount or shelf)
+  - Add UniFi Cloud Key or VM-hosted UniFi Controller
+  - Dedicated out-of-band management device
+  - Install environmental monitor or rack fan if temps rise
+  - Fiber uplink testing or external-facing DMZ
